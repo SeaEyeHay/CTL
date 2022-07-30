@@ -140,14 +140,15 @@ struct CBOff move_f_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBSize sLe
 struct CBOff copy_cbuf (void* dest, void* src, CBSize len, size_t off, size_t size) {
     assert ( is_pow_2 (len) && "Invalid source buffer length!! - Use the calc_buf_size function." );
     
-    off &= len_mask (len);
+    const size_t mask = len_mask (len);
+    off &= mask;
 
     size_t toCopy = len - off;
     if ( toCopy > size ) toCopy = size;
 
     memcpy (dest, src + off, toCopy);
-    size -= toCopy;
+    memcpy (dest + toCopy, src, size - toCopy);
 
-    memcpy (dest + toCopy, src, size);
+    return (struct CBOff) { .dest=size, .src=(off + size) & mask };
 }
 

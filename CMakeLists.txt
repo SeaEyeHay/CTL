@@ -16,8 +16,19 @@ set (inc_files "vector.h")
 
 ################### DEPENDENCIES ####################
 
-# Import allocator
+# Import circular buffer implementation
 add_subdirectory ("src/circ-buffer")
+
+# Import dependencies for unit testing
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    include (CTest)
+
+    # Unit testing library libcheck
+    find_package (check)
+    if (NOT DEFINED check_FOUND)
+        add_subdirectory ("deps/check")
+    endif ()
+endif ()
 
 ################# END DEPENDENCIES ##################
 
@@ -25,13 +36,6 @@ add_subdirectory ("src/circ-buffer")
 
 # Type of linking for the library
 set (linking SHARED CACHE STRING "Type of linking for the library")
-
-# If the library is used as header only
-option (header_only "Use CTL as header only" OFF)
-
-if (${header_only})
-    add_compile_definitions (HEADER_ONLY)
-endif ()
 
 
 # Give each source file an absolute path
@@ -44,13 +48,8 @@ list (TRANSFORM inc_files PREPEND "${inc_dir}/")
 
 ################### TARGETS ####################
 
-if (${header_only})
-    add_library (${PROJECT_NAME} INTERFACE)
-    target_include_directories (${PROJECT_NAME} INTERFACE ${inc_dir})
-else ()
-    add_library (${PROJECT_NAME} ${linking} ${src_files} ${inc_files})
-    target_include_directories (${PROJECT_NAME} PUBLIC ${inc_dir})
-endif ()
+add_library (${PROJECT_NAME} ${linking} ${src_files} ${inc_files})
+target_include_directories (${PROJECT_NAME} PUBLIC ${inc_dir})
 
 ################# END TARGETS ##################
 
