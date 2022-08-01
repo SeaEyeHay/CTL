@@ -75,8 +75,8 @@ void free_cbuf (void** buf, CBSize size) {
 void* find_in_cbuf (void* buf, CBSize len, size_t off, size_t index) {
     assert ( is_pow_2 (len) && "Invalid buffer length!! - Use the calc_buf_size function." );
 
-    size_t mask = len_mask (len);
-    size_t i = (off + index) & mask;
+    const size_t mask = len_mask (len);
+    const size_t i = (off + index) & mask;
 
     return buf + i;
 }
