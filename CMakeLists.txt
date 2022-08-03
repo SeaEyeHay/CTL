@@ -11,7 +11,7 @@ set (inc_dir "${CMAKE_SOURCE_DIR}/include")
 
 # Listing of headers
 set (inc_files 
-    "circ-buffer.h" "macros.h"          # Backend
+    "macros.h" 
     "vector.h" "vector-std.h"           # Vectors
 )
 
@@ -23,19 +23,9 @@ set (src_files "vector.c")
 set (impl_files "vector-std.c")
 
 
-# Listings fo backend files
-set (std_files 
-    "circ-buffer/standard.c"            # CIRCULAR BUFFER
-)
-
-set (nostd_files 
-    ""
-)
-
-
 # Listings of unit test
 set (test_dir "${CMAKE_SOURCE_DIR}/tests")
-set (test_files "test-circ.c")
+set (test_files )
 
 ################# END VARIABLES ##################
 
@@ -59,9 +49,6 @@ endif ()
 # Type of linking for the library
 set (linking SHARED CACHE STRING "Type of linking for the library")
 
-# Type of implementation to use
-option (use_std "Use the standard library implementation" ON)
-
 # Build unit tests
 option ("${PROJECT_NAME}_build_testing" "Build unit tests for CTL" ON)
 
@@ -76,48 +63,21 @@ list (TRANSFORM src_files PREPEND "${src_dir}/")
 list (TRANSFORM inc_files PREPEND "${inc_dir}/")
 
 
-# Give each standard source file an absolute path
-list (TRANSFORM std_files PREPEND "${src_dir}/")
-
-# Give each non-standard source file an absolute path
-list (TRANSFORM nostd_files PREPEND "${src_dir}/")
-
-
-#
-# Setting compilers definition
-#
-
-# Define backend type
-if (${use_std})
-    add_compile_definitions ("CTL_USE_STD")
-else ()
-    add_compile_definitions ("CTL_USE_NOSTD")
-endif ()
+# Give each standard implementation source file an absolute path
+list (TRANSFORM impl_files PREPEND "${src_dir}/")
 
 ################# END CONFIGURATION ##################
 
 ################### TARGETS ####################
 
-# Backend Implementations
-if (${use_std})
-    add_library (backend STATIC ${std_files})
-else ()
-    add_library (backend STATIC ${nostd_files})
-endif ()
-
-target_include_directories (backend PRIVATE ${inc_dir})
-
-
 # CTL Library
 add_library (${PROJECT_NAME} ${linking} ${src_files} ${inc_files})
 target_include_directories (${PROJECT_NAME} PUBLIC ${inc_dir})
 
-target_link_libraries (${PROJECT_NAME} backend)
-
 
 # Data Structures implementations 
 if (${build_std_type_impl})
-    add_library ("${PROJECT_NAME}std" ${linking} ${std_files})
+    add_library ("${PROJECT_NAME}std" ${linking} ${impl_files})
     target_link_libraries ("${PROJECT_NAME}std" ${PROJECT_NAME})
 endif ()
 
