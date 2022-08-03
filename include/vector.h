@@ -15,6 +15,8 @@ extern void vec_get_ptr (void* ret, void* vec, size_t item, size_t lenght, size_
 
 extern void vec_set_ptr (void* val, void* vec, size_t item, size_t lenght, size_t offset, size_t i);
 
+extern void vec_add_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i);
+
 extern void vec_rem_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i);
 
 
@@ -107,16 +109,24 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, set, CTL_TYPE_NAME) (struct CTL_VECTOR* 
 )
 
 CTL_INLINE void DEF_METHODE(vec, add, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, size_t i, CTL_TYPE_ID x) fn (
-    if (vec->len == vec->max) resize_vec (&vec->store, &vec->max, &vec->off, 1);
+    if (vec->len == vec->max) resize_vec ((void**)&vec->store, &vec->max, &vec->off, 1);
+
+    vec_add_ptr (vec->store, sizeof(CTL_TYPE_ID), &vec->len, vec->max, &vec->off, i);
+    vec_set_ptr (&x, vec->store, sizeof(CTL_TYPE_ID), vec->len, vec->off, i);
 )
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, rem, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, size_t i) fn (
     CTL_TYPE_ID ret = DEF_METHODE(vec, get, CTL_TYPE_NAME) (vec, i);
     vec_rem_ptr (vec->store, sizeof(CTL_TYPE_ID), &vec->len, vec->max, &vec->off, i);
 
-    if (vec->max >= 3*vec->len) resize_vec (&vec->store, &vec->max, &vec->off, -1);
+    if (vec->max >= 3*vec->len) resize_vec ((void**)&vec->store, &vec->max, &vec->off, -1);
 
     return ret;
+)
+
+
+CTL_INLINE void DEF_METHODE(vec, push, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, CTL_TYPE_ID x) fn (
+    
 )
 
 

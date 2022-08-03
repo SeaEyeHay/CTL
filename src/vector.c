@@ -22,8 +22,13 @@ void make_ptr_vec (void* ret, size_t items, size_t length) {
 }
 
 void resize_vec (void** store, size_t* max, size_t* offset, char shift) {
-    CBSize newMax = *max << shift;
-    if (newMax < 1) newMax = 2;
+    
+    CBSize newMax;
+    if (*max == 0) {
+        newMax = 2;
+    } else {
+        newMax = *max << shift;
+    }
 
     realloc_cbuf (store, *offset, *max, newMax);
 
@@ -42,13 +47,26 @@ void vec_set_ptr (void* val, void* vec, size_t item, size_t lenght, size_t offse
     move_b_cbuf (vec, lenght, offset + i, val, item, 0, item);
 }
 
+void vec_add_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i) {
+    i *= item;
+
+    if ( i < *length/2 ) {
+        *offset = move_f_cbuf (vec, max, *offset + i, vec, max, *offset + i + item, i + item).dest;
+    } else {
+        const size_t toMove = *length - i;
+        move_b_cbuf (vec, max, *offset + i + item, vec, max, *offset + i, toMove);
+    }
+
+    *length += item;
+}
+
 void vec_rem_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i) {
     i *= item;
 
     if ( i < *length/2 ) {
         *offset = move_f_cbuf (vec, max, *offset + i + item, vec, max, *offset + i, i).dest;
     } else {
-        const size_t toMove = *length - i;
+        const size_t toMove = *length - (i + item);
         move_b_cbuf (vec, max, *offset + i, vec, max, *offset + i + item, toMove);
     }
 

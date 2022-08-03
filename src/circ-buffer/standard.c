@@ -131,10 +131,12 @@ struct CBOff move_f_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBSize sLe
     assert ( is_pow_2 (dLen) && "Invalid destination buffer length!! - Use the calc_buf_size function." );
     assert ( is_pow_2 (sLen) && "Invalid source buffer length!! - Use the calc_buf_size function." );
     
-    dOff = (dOff - size) & len_mask (dLen);
-    sOff = (sOff - size) & len_mask (sLen);
+    dOff = dOff - size; 
+    sOff = sOff - size; 
 
-    return move_b_cbuf (d, dLen, dOff, s, sLen, sOff, size);
+    move_b_cbuf (d, dLen, dOff, s, sLen, sOff, size);
+
+    return (struct CBOff) { .dest=dOff, .src=sOff };
 }
 
 struct CBOff copy_cbuf (void* dest, void* src, CBSize len, size_t off, size_t size) {
