@@ -9,15 +9,28 @@ set (src_dir "${CMAKE_SOURCE_DIR}/src")
 set (inc_dir "${CMAKE_SOURCE_DIR}/include")
 
 
-# Listings of files
+# Listing of headers
+set (inc_files 
+    "circ-buffer.h" "macros.h"          # Backend
+    "vector.h" "vector-std.h"           # Vectors
+)
+
+
+# Listings of source files
 set (src_files "vector.c")
-set (inc_files "vector/template.h")
 
+# Listings of implementation files
+set (impl_files "vector-std.c")
+
+
+# Listings fo backend files
 set (std_files 
-    "circ-buffer/standard.c"    # CIRCULAR BUFFER
-    )
+    "circ-buffer/standard.c"            # CIRCULAR BUFFER
+)
 
-set (nostd_files "")
+set (nostd_files 
+    ""
+)
 
 
 # Listings of unit test
@@ -51,6 +64,9 @@ option (use_std "Use the standard library implementation" ON)
 
 # Build unit tests
 option ("${PROJECT_NAME}_build_testing" "Build unit tests for CTL" ON)
+
+# Build Data Structures implementation for standard types
+option (build_std_type_impl "Build implementations for standard Types" ON)
 
 
 # Give each source file an absolute path
@@ -100,9 +116,10 @@ target_link_libraries (${PROJECT_NAME} backend)
 
 
 # Data Structures implementations 
-#
-#       TODO
-#
+if (${build_std_type_impl})
+    add_library ("${PROJECT_NAME}std" ${linking} ${std_files})
+    target_link_libraries ("${PROJECT_NAME}std" ${PROJECT_NAME})
+endif ()
 
 ################# END TARGETS ##################
 
