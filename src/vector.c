@@ -72,3 +72,26 @@ void vec_rem_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* of
 
     *length -= item;
 }
+
+
+void vec_push_ptr (void* vec, void* val, size_t item, size_t* length, size_t max, size_t offset) {
+    move_b_cbuf (vec, max, offset + *length, val, item, 0, item);
+    *length += item;
+}
+
+void vec_push_front_ptr (void* vec, void* val, size_t item, size_t max, size_t* offset) {
+    move_f_cbuf (vec, max, *offset, val, item, 0, item);
+    *offset -= item;
+}
+
+
+void vec_pop_ptr (void* ret, void* vec, size_t item, size_t* length, size_t max, size_t offset) {
+    *length -= item;
+    copy_cbuf (ret, vec, max, offset + *length, item);
+}
+
+void vec_pop_front_ptr (void* ret, void* vec, size_t item, size_t max, size_t* offset) {
+    copy_cbuf (ret, vec, max, *offset, item);
+    *offset += item;
+}
+

@@ -20,6 +20,16 @@ extern void vec_add_ptr (void* vec, size_t item, size_t* length, size_t max, siz
 extern void vec_rem_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i);
 
 
+extern void vec_push_ptr (void* vec, void* val, size_t item, size_t* length, size_t max, size_t offset);
+
+extern void vec_push_front_ptr (void* vec, void* val, size_t item, size_t max, size_t* offset);
+
+
+extern void vec_pop_ptr (void* ret, void* vec, size_t item, size_t* length, size_t max, size_t offset);
+
+extern void vec_pop_front_ptr (void* ret, void* vec, size_t item, size_t max, size_t* offset);
+
+
 #endif // CTL_VECTOR_H
 
 
@@ -126,7 +136,29 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, rem, CTL_TYPE_NAME) (struct CTL_VECTOR* 
 
 
 CTL_INLINE void DEF_METHODE(vec, push, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, CTL_TYPE_ID x) fn (
-    
+    vec_push_ptr (vec->store, &x, sizeof(CTL_TYPE_ID), &vec->len, vec->max, vec->off);
+)
+
+CTL_INLINE void DEF_METHODE(vec, push_front, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, CTL_TYPE_ID x) fn (
+    vec_push_front_ptr (vec->store, &x, sizeof(CTL_TYPE_ID), vec->max, &vec->off);
+    vec->len += sizeof(CTL_TYPE_ID);
+)
+
+
+CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, pop, CTL_TYPE_NAME) (struct CTL_VECTOR* vec) fn (
+    CTL_TYPE_ID ret;
+    vec_pop_ptr (&ret, vec->store, sizeof(CTL_TYPE_ID), &vec->len, vec->max, vec->off);
+
+    return ret;
+)
+
+CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, pop_front, CTL_TYPE_NAME) (struct CTL_VECTOR* vec) fn (
+    CTL_TYPE_ID ret;
+
+    vec_pop_front_ptr (&ret, vec->store, sizeof(CTL_TYPE_ID), vec->max, &vec->off);
+    vec->len -= sizeof(CTL_TYPE_ID);
+
+    return ret;
 )
 
 
