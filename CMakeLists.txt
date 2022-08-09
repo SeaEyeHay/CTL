@@ -25,7 +25,7 @@ set (impl_files "vector-std.c")
 
 # Listings of unit test
 set (test_dir "${CMAKE_SOURCE_DIR}/tests")
-set (test_files )
+set (test_files "test-vec.c")
 
 ################# END VARIABLES ##################
 

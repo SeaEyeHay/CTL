@@ -8,26 +8,34 @@
 
 extern void make_ptr_vec (void* ret, size_t items, size_t length);
 
-extern void resize_vec (void** store, size_t* max, size_t* offset, char shift);
+extern void resize_vec (void** restrict store, size_t* restrict max, size_t* restrict offset, char shift);
+
+extern void free_vec (void** restrict store, size_t* restrict len, size_t* restrict max, size_t* restrict off);
 
 
-extern void vec_get_ptr (void* ret, void* vec, size_t item, size_t lenght, size_t offset, size_t i);
+extern void vec_get_ptr (void* restrict ret, void* restrict vec, size_t item, size_t max, size_t offset, size_t i);
 
-extern void vec_set_ptr (void* val, void* vec, size_t item, size_t lenght, size_t offset, size_t i);
+extern void vec_set_ptr (void* restrict val, void* restrict vec, size_t item, size_t max, size_t offset, size_t i);
 
-extern void vec_add_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i);
+extern void vec_add_ptr (void* restrict vec, size_t item, size_t* restrict length, size_t max, 
+                         size_t* restrict offset, size_t i);
 
-extern void vec_rem_ptr (void* vec, size_t item, size_t* length, size_t max, size_t* offset, size_t i);
-
-
-extern void vec_push_ptr (void* vec, void* val, size_t item, size_t* length, size_t max, size_t offset);
-
-extern void vec_push_front_ptr (void* vec, void* val, size_t item, size_t max, size_t* offset);
+extern void vec_rem_ptr (void* restrict vec, size_t item, size_t* restrict length, size_t max, 
+                         size_t* restrict offset, size_t i);
 
 
-extern void vec_pop_ptr (void* ret, void* vec, size_t item, size_t* length, size_t max, size_t offset);
+extern void vec_push_ptr (void* restrict vec, void* restrict val, size_t item, size_t* restrict length, 
+                          size_t max, size_t offset);
 
-extern void vec_pop_front_ptr (void* ret, void* vec, size_t item, size_t max, size_t* offset);
+extern void vec_push_front_ptr (void* restrict vec, void* restrict val, size_t item,
+                                size_t* restrict length, size_t max, size_t* restrict offset);
+
+
+extern void vec_pop_ptr (void* restrict ret, void* restrict vec, size_t item, size_t* restrict length, 
+                         size_t max, size_t offset);
+
+extern void vec_pop_front_ptr (void* restrict ret, void* restrict vec, size_t item, 
+                               size_t* restrict length, size_t max, size_t* offset);
 
 
 #endif // CTL_VECTOR_H
@@ -103,6 +111,10 @@ CTL_INLINE struct CTL_VECTOR DEF_CONSTRUCTOR(CTL_TYPE_NAME, vec) (size_t iniSize
     return newVec;
 )
 
+CTL_INLINE void DEF_DESTRUCTOR(CTL_TYPE_NAME, vec) (struct CTL_VECTOR* vec) fn (
+    free_vec ((void**)&vec->store, &vec->len, &vec->max, &vec->off);
+)
+
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, get, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, size_t i) fn (
     CTL_TYPE_ID ret;
@@ -122,7 +134,7 @@ CTL_INLINE void DEF_METHODE(vec, add, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, si
     if (vec->len == vec->max) resize_vec ((void**)&vec->store, &vec->max, &vec->off, 1);
 
     vec_add_ptr (vec->store, sizeof(CTL_TYPE_ID), &vec->len, vec->max, &vec->off, i);
-    vec_set_ptr (&x, vec->store, sizeof(CTL_TYPE_ID), vec->len, vec->off, i);
+    vec_set_ptr (&x, vec->store, sizeof(CTL_TYPE_ID), vec->max, vec->off, i);
 )
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, rem, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, size_t i) fn (
@@ -136,12 +148,13 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, rem, CTL_TYPE_NAME) (struct CTL_VECTOR* 
 
 
 CTL_INLINE void DEF_METHODE(vec, push, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, CTL_TYPE_ID x) fn (
+    if (vec->len == vec->max) resize_vec ((void**)&vec->store, &vec->max, &vec->off, 1);
     vec_push_ptr (vec->store, &x, sizeof(CTL_TYPE_ID), &vec->len, vec->max, vec->off);
 )
 
 CTL_INLINE void DEF_METHODE(vec, push_front, CTL_TYPE_NAME) (struct CTL_VECTOR* vec, CTL_TYPE_ID x) fn (
-    vec_push_front_ptr (vec->store, &x, sizeof(CTL_TYPE_ID), vec->max, &vec->off);
-    vec->len += sizeof(CTL_TYPE_ID);
+    if (vec->len == vec->max) resize_vec ((void**)&vec->store, &vec->max, &vec->off, 1);
+    vec_push_front_ptr (vec->store, &x, sizeof(CTL_TYPE_ID), &vec->len, vec->max, &vec->off);
 )
 
 
@@ -149,14 +162,16 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, pop, CTL_TYPE_NAME) (struct CTL_VECTOR* 
     CTL_TYPE_ID ret;
     vec_pop_ptr (&ret, vec->store, sizeof(CTL_TYPE_ID), &vec->len, vec->max, vec->off);
 
+    if (vec->max >= 3*vec->len) resize_vec ((void**)&vec->store, &vec->max, &vec->off, -1);
+
     return ret;
 )
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(vec, pop_front, CTL_TYPE_NAME) (struct CTL_VECTOR* vec) fn (
     CTL_TYPE_ID ret;
+    vec_pop_front_ptr (&ret, vec->store, sizeof(CTL_TYPE_ID), &vec->len, vec->max, &vec->off);
 
-    vec_pop_front_ptr (&ret, vec->store, sizeof(CTL_TYPE_ID), vec->max, &vec->off);
-    vec->len -= sizeof(CTL_TYPE_ID);
+    if (vec->max >= 3*vec->len) resize_vec ((void**)&vec->store, &vec->max, &vec->off, -1);
 
     return ret;
 )
