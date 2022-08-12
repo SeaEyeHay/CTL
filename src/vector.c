@@ -7,6 +7,10 @@
 #include <assert.h>
 
 
+//
+//      ======================================= CIRCULAR BUFFER ======================================= 
+//
+
 typedef size_t CBSize;
 
 struct CBOff {
@@ -158,7 +162,7 @@ static void* realloc_cbuf (void** buf, size_t off, CBSize oldSize, CBSize newSiz
 
 
 //
-//      ====================================================================================
+//      ======================================= API ============================================
 //
 
 
@@ -180,19 +184,27 @@ void make_ptr_vec (void* ret, size_t items, size_t length) {
     *((struct CtlGenericVec*)ret) = newVec;
 }
 
-void resize_vec (void** restrict store, size_t* restrict max, size_t* restrict offset, char shift) {
+void grow_vec (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off) {
     
     CBSize newMax;
     if (*max == 0) {
-        newMax = 2;
+        newMax = calc_buf_size (2 * item);
     } else {
-        newMax = *max << shift;
+        newMax = *max << 1;
     }
 
-    realloc_cbuf (store, *offset, *max, newMax);
+    realloc_cbuf (store, *off, *max, newMax);
 
     *max = newMax;
-    *offset = 0;
+    *off = 0;
+}
+
+void shrink_vec (void** restrict store, size_t* restrict max, size_t* restrict off) {
+    CBSize newMax = *max >> 1;
+    realloc_cbuf (store, *off, *max, newMax);
+
+    *max = newMax;
+    *off = 0;
 }
 
 void free_vec (void** restrict store, size_t* restrict len, size_t* restrict max, size_t* restrict off) {
@@ -249,7 +261,8 @@ void vec_rem_ptr (
 
 
 void vec_push_ptr (
-    void* restrict vec, void* restrict val, size_t item, size_t* restrict length, size_t max, size_t offset
+    void* restrict vec, void* restrict val, size_t item, size_t* restrict length, 
+    size_t max, size_t offset
 ) {
     move_b_cbuf (vec, max, offset + *length, val, item, 0, item);
     *length += item;
@@ -261,13 +274,14 @@ void vec_push_front_ptr (
 ) {
     move_f_cbuf (vec, max, *offset, val, item, 0, item);
 
-    *offset -= item;
+    *offset = *offset - item & len_mask (max);
     *length += item;
 }
 
 
 void vec_pop_ptr (
-    void* restrict ret, void* restrict vec, size_t item, size_t* restrict length, size_t max, size_t offset
+    void* restrict ret, void* restrict vec, size_t item, size_t* restrict length, size_t max, 
+    size_t offset
 ) {
     *length -= item;
     copy_cbuf (ret, vec, max, offset + *length, item);
@@ -279,7 +293,12 @@ void vec_pop_front_ptr (
 ) {
     copy_cbuf (ret, vec, max, *offset, item);
 
-    *offset += item;
-    *length += item;
+    *offset = *offset + item & len_mask (max);
+    *length -= item;
 }
+
+
+//
+//      ======================================= ITERATOR ============================================
+//
 

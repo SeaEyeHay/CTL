@@ -29,21 +29,6 @@ set (test_files "test-vec.c")
 
 ################# END VARIABLES ##################
 
-################### DEPENDENCIES ####################
-
-# Import dependencies for unit testing
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    include (CTest)
-
-    # Unit testing library libcheck
-    find_package (check QUIET)
-    if (NOT ${check_FOUND})
-        add_subdirectory ("deps/check")
-    endif ()
-endif ()
-
-################# END DEPENDENCIES ##################
-
 ################### CONFIGURATION ####################
 
 # Type of linking for the library
@@ -67,6 +52,21 @@ list (TRANSFORM inc_files PREPEND "${inc_dir}/")
 list (TRANSFORM impl_files PREPEND "${src_dir}/")
 
 ################# END CONFIGURATION ##################
+
+################### DEPENDENCIES ####################
+
+# Import dependencies for unit testing
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR "${PROJECT_NAME}_build_testing")
+    include (CTest)
+
+    # Unit testing library libcheck
+    find_package (check QUIET)
+    if (NOT ${check_FOUND})
+        add_subdirectory ("deps/check")
+    endif ()
+endif ()
+
+################# END DEPENDENCIES ##################
 
 ################### TARGETS ####################
 
