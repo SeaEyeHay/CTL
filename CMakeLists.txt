@@ -85,8 +85,9 @@ endif ()
 
 ################### UNIT TESTS ####################
 
-# Create individual executables and runner for each test
 if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR "${PROJECT_NAME}_build_testing") AND BUILD_TESTING)
+    
+    # Create individual executables and runner for each test
     foreach (test IN LISTS test_files)
         set (path "${test_dir}/${test}")
         set (target "${test}.run")
@@ -98,6 +99,10 @@ if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR "${PROJECT_NAME}_build_testing"
         # Create test runner
         add_test (NAME "${test}" COMMAND "${target}")
     endforeach ()
+
+    # Include benchmarks
+    add_subdirectory ("benchmarks")
+
 endif ()
 
 ################# END UNIT TESTS ##################
