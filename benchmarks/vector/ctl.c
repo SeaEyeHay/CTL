@@ -12,7 +12,7 @@
 int main (int argc, char** argv) {
     const unsigned long
         seed = strtoul (argv[1], NULL, 10),
-        n = strtoul (argv[2], NULL, 10);
+        n    = strtoul (argv[2], NULL, 10);
 
     srand (seed);
 
@@ -42,4 +42,5 @@ int main (int argc, char** argv) {
 
     return 0;
 }
+
 

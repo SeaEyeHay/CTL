@@ -11,16 +11,20 @@ set (inc_dir "${CMAKE_SOURCE_DIR}/include")
 
 # Listing of headers
 set (inc_files 
-    "macros.h" 
-    "vector.h" "vector-std.h"           # Vectors
+    "macros.h" "template.h" "undef-list.h"      # Pre-proc stuffs
+
+    "iter.h"
+
+    "vector.h" "vector-std.h"                   # Vectors
+    "link.h"   "link-std.h"                     # linked-list
 )
 
 
 # Listings of source files
-set (src_files "vector.c")
+set (src_files "vector.c" "iter.c" "link.c")
 
 # Listings of implementation files
-set (impl_files "vector-std.c")
+set (impl_files "vector-std.c" "link-std.c")
 
 
 # Listings of unit test
@@ -56,7 +60,7 @@ list (TRANSFORM impl_files PREPEND "${src_dir}/")
 ################### DEPENDENCIES ####################
 
 # Import dependencies for unit testing
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR "${PROJECT_NAME}_build_testing")
+if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR "${PROJECT_NAME}_build_testing") AND BUILD_TESTING)
     include (CTest)
 
     # Unit testing library libcheck

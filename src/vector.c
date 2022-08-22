@@ -72,12 +72,14 @@ static struct CBOff move_b_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBS
     assert ( is_pow_2 (sLen) && "Invalid source buffer length!! - Use the calc_buf_size function." );
 
 
+    // Cycle the offset around the circle
     const size_t dMask = len_mask (dLen), sMask = len_mask (sLen);
 
     dOff = dOff & dMask;
     sOff = sOff & sMask;
 
 
+    // Decide which buffer is shorter and which is longer
     size_t longer = dLen - dOff, shorter = sLen - sOff;
 
     if ( longer < shorter ) {
@@ -121,6 +123,7 @@ static struct CBOff move_f_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBS
 
     move_b_cbuf (d, dLen, dOff, s, sLen, sOff, size);
 
+
     return (struct CBOff) { .dest=dOff, .src=sOff };
 }
 
@@ -136,7 +139,24 @@ static struct CBOff copy_cbuf (void* restrict dest, void* restrict src, CBSize l
     memcpy (dest, src + off, toCopy);
     memcpy (dest + toCopy, src, size - toCopy);
 
+
     return (struct CBOff) { .dest=size, .src=(off + size) & mask };
+}
+
+static struct CBOff copy_to_cbuf (void* restrict dest, CBSize len, size_t off, void* restrict src, size_t size) {
+    assert ( is_pow_2 (len) && "Invalid destination buffer length!! - Use the calc_buf_size function." );
+
+    const size_t mask = len_mask (len);
+    off &= mask;
+
+    size_t toCopy = len - off;
+    if ( toCopy > size ) toCopy = size;
+
+    memcpy (dest + off, src, toCopy);
+    memcpy (dest, src + toCopy, size - toCopy);
+
+
+    return (struct CBOff) { .dest=(off + size) & mask, .src=size };
 }
 
 
@@ -156,6 +176,7 @@ static void* realloc_cbuf (void** buf, size_t off, CBSize oldSize, CBSize newSiz
 
     free (*buf);
     *buf = newBuf;
+
 
     return newBuf;
 }
@@ -222,9 +243,9 @@ void vec_get_ptr (void* restrict ret, void* restrict vec, size_t item, size_t le
     copy_cbuf (ret, vec, lenght, offset + i, item);
 }
 
-void vec_set_ptr (void* restrict val, void* restrict vec, size_t item, size_t lenght, size_t offset, size_t i) {
+void vec_set_ptr (void* restrict val, void* restrict vec, size_t item, size_t length, size_t offset, size_t i) {
     i *= item;
-    move_b_cbuf (vec, lenght, offset + i, val, item, 0, item);
+    copy_to_cbuf (vec, length, offset + i, val, item);
 }
 
 void vec_add_ptr (
@@ -301,4 +322,5 @@ void vec_pop_front_ptr (
 //
 //      ======================================= ITERATOR ============================================
 //
+
 
