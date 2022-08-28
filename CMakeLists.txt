@@ -15,16 +15,16 @@ set (inc_files
 
     "iter.h"
 
-    "vector.h" "vector-std.h"                   # Vectors
+    "deque.h"  "deque-std.h"                    # Deque
     "link.h"   "link-std.h"                     # linked-list
 )
 
 
 # Listings of source files
-set (src_files "vector.c" "iter.c" "link.c")
+set (src_files "deque.c" "iter.c" "link.c")
 
 # Listings of implementation files
-set (impl_files "vector-std.c" "link-std.c")
+set (impl_files "deque-std.c" "link-std.c")
 
 
 # Listings of unit test

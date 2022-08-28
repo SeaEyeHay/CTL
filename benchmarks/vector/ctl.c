@@ -6,7 +6,7 @@
 
 
 #define CTL_TYPE int
-#include "vector.h"
+#include "deque.h"
 
 
 int main (int argc, char** argv) {
@@ -16,15 +16,15 @@ int main (int argc, char** argv) {
 
     srand (seed);
 
-    struct int_v vec = make_int_vec (0);
+    struct int_d deq = make_int_deq (0);
     struct timeval startTime, endTime;
 
 
     gettimeofday (&startTime, NULL);
     
-    vec_add_int (&vec, 0, 0);
+    deq_add_int (&deq, 0, 0);
     for (unsigned long i = 1; i < n; i++) {
-        vec_add_int (&vec, rand() % i, i);
+        deq_add_int (&deq, rand() % i, i);
     }
 
     gettimeofday (&endTime, NULL);
@@ -38,7 +38,7 @@ int main (int argc, char** argv) {
     printf ("%lu:%lu\n", length.tv_sec, length.tv_usec);
 
 
-    free_int_vec (&vec);
+    free_int_deq (&deq);
 
     return 0;
 }

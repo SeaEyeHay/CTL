@@ -1,5 +1,5 @@
 #define CTL_NO_TEMPLATE
-#include "vector.h"
+#include "deque.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -193,7 +193,7 @@ struct CtlGenericVec {
 };
 
 
-void make_ptr_vec (void* ret, size_t items, size_t length) {
+void make_ptr_deq (void* ret, size_t items, size_t length) {
     CBSize bufSize = calc_buf_size (items * length);
 
     struct CtlGenericVec newVec = { .len=0, .offset=0 };
@@ -205,7 +205,7 @@ void make_ptr_vec (void* ret, size_t items, size_t length) {
     *((struct CtlGenericVec*)ret) = newVec;
 }
 
-void grow_vec (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off) {
+void grow_deq (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off) {
     
     CBSize newMax;
     if (*max == 0) {
@@ -220,7 +220,7 @@ void grow_vec (void** restrict store, size_t item, size_t* restrict max, size_t*
     *off = 0;
 }
 
-void shrink_vec (void** restrict store, size_t* restrict max, size_t* restrict off) {
+void shrink_deq (void** restrict store, size_t* restrict max, size_t* restrict off) {
     CBSize newMax = *max >> 1;
     realloc_cbuf (store, *off, *max, newMax);
 
@@ -228,7 +228,7 @@ void shrink_vec (void** restrict store, size_t* restrict max, size_t* restrict o
     *off = 0;
 }
 
-void free_vec (void** restrict store, size_t* restrict len, size_t* restrict max, size_t* restrict off) {
+void free_deq (void** restrict store, size_t* restrict len, size_t* restrict max, size_t* restrict off) {
     free (*store);
     *store = NULL;
 
@@ -238,81 +238,81 @@ void free_vec (void** restrict store, size_t* restrict len, size_t* restrict max
 }
 
 
-void vec_get_ptr (void* restrict ret, void* restrict vec, size_t item, size_t lenght, size_t offset, size_t i) {
+void deq_get_ptr (void* restrict ret, void* restrict deq, size_t item, size_t lenght, size_t offset, size_t i) {
     i *= item;
-    copy_cbuf (ret, vec, lenght, offset + i, item);
+    copy_cbuf (ret, deq, lenght, offset + i, item);
 }
 
-void vec_set_ptr (void* restrict val, void* restrict vec, size_t item, size_t length, size_t offset, size_t i) {
+void deq_set_ptr (void* restrict val, void* restrict deq, size_t item, size_t length, size_t offset, size_t i) {
     i *= item;
-    copy_to_cbuf (vec, length, offset + i, val, item);
+    copy_to_cbuf (deq, length, offset + i, val, item);
 }
 
-void vec_add_ptr (
-    void* restrict vec, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
+void deq_add_ptr (
+    void* restrict deq, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
     size_t i
 ) {
     i *= item;
 
     if ( i < *length/2 ) {
-        *offset = move_f_cbuf (vec, max, *offset + i, vec, max, *offset + i + item, i + item).dest;
+        *offset = move_f_cbuf (deq, max, *offset + i, deq, max, *offset + i + item, i + item).dest;
     } else {
         const size_t toMove = *length - i;
-        move_b_cbuf (vec, max, *offset + i + item, vec, max, *offset + i, toMove);
+        move_b_cbuf (deq, max, *offset + i + item, deq, max, *offset + i, toMove);
     }
 
     *length += item;
 }
 
-void vec_rem_ptr (
-    void* restrict vec, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
+void deq_rem_ptr (
+    void* restrict deq, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
     size_t i
 ) {
     i *= item;
 
     if ( i < *length/2 ) {
-        *offset = move_f_cbuf (vec, max, *offset + i + item, vec, max, *offset + i, i).dest;
+        *offset = move_f_cbuf (deq, max, *offset + i + item, deq, max, *offset + i, i).dest;
     } else {
         const size_t toMove = *length - (i + item);
-        move_b_cbuf (vec, max, *offset + i, vec, max, *offset + i + item, toMove);
+        move_b_cbuf (deq, max, *offset + i, deq, max, *offset + i + item, toMove);
     }
 
     *length -= item;
 }
 
 
-void vec_push_ptr (
-    void* restrict vec, void* restrict val, size_t item, size_t* restrict length, 
+void deq_push_ptr (
+    void* restrict deq, void* restrict val, size_t item, size_t* restrict length, 
     size_t max, size_t offset
 ) {
-    move_b_cbuf (vec, max, offset + *length, val, item, 0, item);
+    move_b_cbuf (deq, max, offset + *length, val, item, 0, item);
     *length += item;
 }
 
-void vec_push_front_ptr (
-    void* restrict vec, void* restrict val, size_t item, size_t* restrict length, size_t max, 
+void deq_push_front_ptr (
+    void* restrict deq, void* restrict val, size_t item, size_t* restrict length, size_t max, 
     size_t* restrict offset
 ) {
-    move_f_cbuf (vec, max, *offset, val, item, 0, item);
+    move_f_cbuf (deq, max, *offset, val, item, 0, item);
 
     *offset = *offset - item & len_mask (max);
     *length += item;
 }
 
 
-void vec_pop_ptr (
-    void* restrict ret, void* restrict vec, size_t item, size_t* restrict length, size_t max, 
+void deq_pop_ptr (
+    void* restrict ret, void* restrict deq, size_t item, size_t* restrict length, size_t max, 
     size_t offset
 ) {
     *length -= item;
-    copy_cbuf (ret, vec, max, offset + *length, item);
+    copy_cbuf (ret, deq, max, offset + *length, item);
 }
 
-void vec_pop_front_ptr (
-    void* restrict ret, void* restrict vec, size_t item, size_t* restrict length, size_t max, 
+void deq_pop_front_ptr (
+    void* restrict ret, void* restrict deq, size_t item, size_t* restrict length, size_t max, 
     size_t* restrict offset
 ) {
-    copy_cbuf (ret, vec, max, *offset, item);
+    copy_cbuf (ret, deq, max, *offset, item);
 
     *offset = *offset + item & len_mask (max);
     *length -= item;
