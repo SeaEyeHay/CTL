@@ -43,6 +43,13 @@
 #include "deque.h"
 
 
+#define CTL_TYPE float
+#include "deque.h"
+
+#define CTL_TYPE double
+#include "deque.h"
+
+
 #undef CTL_DECLARATION
 
 #endif // CTL_VECTOR_STD_H

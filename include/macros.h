@@ -9,6 +9,8 @@
 
 #define len(S) ((S).CTL_STRUCT_LENGHT / (sizeof *((S).CTL_STRUCT_STORAGE)))
 
+#define field(P, O, T) *((T*)(((void*)P) + O))
+
 
 #define CAT_2(A, B) A ## B
 #define CAT_3(A, B, C) A ## B ## C

@@ -12,5 +12,6 @@
 #undef CTL_NODE
 
 #undef fn
+#undef shrink
 #undef CTL_INLINE
 

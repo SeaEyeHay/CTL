@@ -1,11 +1,10 @@
 #define CTL_NO_TEMPLATE
 #include "link.h"
 
+#include "macros.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-
-#define field(P, O) *((void**)(((void*)P) + O))
 
 
 //
@@ -22,10 +21,10 @@ void make_list (size_t item, size_t* len, void* dummy, void* this, void** next, 
 }
 
 void del_list (void* restrict node, size_t next, size_t* restrict len) {
-    node = field (node, next);
+    node = field (node, next, void*);
 
     for (size_t i = 0; i < *len; i++) {
-        void* temp = field (node, next);
+        void* temp = field (node, next, void*);
         free (node);
         node = temp;
     }
@@ -34,20 +33,20 @@ void del_list (void* restrict node, size_t next, size_t* restrict len) {
 }
 
 void cat_list (void* dest, void* srcStart, void* srcEnd, size_t next, size_t prev) {
-    void* nextDest = field (dest, next);
+    void* nextDest = field (dest, next, void*);
 
-    void* prevSrc = field (srcStart, prev);
-    void* nextSrc = field (srcEnd, next);
+    void* prevSrc = field (srcStart, prev, void*);
+    void* nextSrc = field (srcEnd, next, void*);
 
 
-    field (prevSrc, next) = nextSrc;
-    field (nextSrc, prev) = prevSrc;
+    field (prevSrc, next, void*) = nextSrc;
+    field (nextSrc, prev, void*) = prevSrc;
 
-    field (srcStart, prev) = dest;
-    field (srcEnd, next) = nextDest;
+    field (srcStart, prev, void*) = dest;
+    field (srcEnd, next, void*) = nextDest;
 
-    field (dest, next) = srcStart;
-    field (nextDest, prev) = srcEnd;
+    field (dest, next, void*) = srcStart;
+    field (nextDest, prev, void*) = srcEnd;
 }
 
 
@@ -61,19 +60,19 @@ void make_node (
 ) {
     *retNode = malloc (nodeSize);
 
-    field (*retNode, next) = nextNode;
-    field (*retNode, prev) = prevNode;
+    field (*retNode, next, void*) = nextNode;
+    field (*retNode, prev, void*) = prevNode;
 
-    field (nextNode, prev) = *retNode; 
-    field (prevNode, next) = *retNode; 
+    field (nextNode, prev, void*) = *retNode; 
+    field (prevNode, next, void*) = *retNode; 
 }
 
 void del_node (void* node, size_t next, size_t prev) {
-    void* nextNode = field (node, next);
-    void* prevNode = field (node, prev);
+    void* nextNode = field (node, next, void*);
+    void* prevNode = field (node, prev, void*);
 
-    field (nextNode, prev) = prevNode;
-    field (prevNode, next) = nextNode;
+    field (nextNode, prev, void*) = prevNode;
+    field (prevNode, next, void*) = nextNode;
 
     free (node);
 }
@@ -85,51 +84,51 @@ void find_node (void** restrict node, size_t len, size_t next, size_t prev, size
         index = len - index;
     }
 
-    *node = field (*node, next);
+    *node = field (*node, next, void*);
 
     for (size_t i = 0; i < index; i++) {
-        *node = field (*node, next);
+        *node = field (*node, next, void*);
     }
 }
 
 void swap_node (void* a, void* b, size_t next, size_t prev) {
 
     // Nodes linked to A and B
-    void* beforeA = field (a, prev);
-    void* afterA  = field (a, next);
+    void* beforeA = field (a, prev, void*);
+    void* afterA  = field (a, next, void*);
 
-    void* beforeB = field (b, prev);
-    void* afterB  = field (b, next);
+    void* beforeB = field (b, prev, void*);
+    void* afterB  = field (b, next, void*);
 
     // Swap position a B
-    field (beforeA, next) = b;
-    field (afterA, prev) = b;
+    field (beforeA, next, void*) = b;
+    field (afterA, prev, void*) = b;
 
-    field (a, prev) = beforeB;
-    field (a, next) = afterB;
+    field (a, prev, void*) = beforeB;
+    field (a, next, void*) = afterB;
 
     // Swap position of A
-    field (beforeB, next) = a;
-    field (afterB, prev) = a;
+    field (beforeB, next, void*) = a;
+    field (afterB, prev, void*) = a;
 
-    field (b, prev) = beforeA;
-    field (b, next) = afterA;
+    field (b, prev, void*) = beforeA;
+    field (b, next, void*) = afterA;
 }
 
 void move_node (void* targetNode, void* node, size_t next, size_t prev) {
-    void* nextTarget = field (targetNode, next);
+    void* nextTarget = field (targetNode, next, void*);
 
-    void* beforeNode = field (node, prev);
-    void* afterNode  = field (node, next);
+    void* beforeNode = field (node, prev, void*);
+    void* afterNode  = field (node, next, void*);
 
 
-    field (beforeNode, next) = afterNode;
-    field (afterNode, prev) = beforeNode;
+    field (beforeNode, next, void*) = afterNode;
+    field (afterNode, prev, void*) = beforeNode;
 
-    field (node, next) = targetNode;
-    field (node, prev) = nextTarget;
+    field (node, next, void*) = targetNode;
+    field (node, prev, void*) = nextTarget;
 
-    field (targetNode, prev) = node;
-    field (nextTarget, next) = node;
+    field (targetNode, prev, void*) = node;
+    field (nextTarget, next, void*) = node;
 }
 

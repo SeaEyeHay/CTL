@@ -39,6 +39,18 @@
 
 #endif // fn
 
+
+#ifdef CTL_SHRUNK
+#define shrink(FN, K) CAT_2_SEP (FN, K, _)
+
+#else
+#define shrink(FN, K) FN
+
+#endif //
+
+
+
+
 #if defined (CTL_IMPLEMENTATION) // CTL_INLINE
 #define CTL_INLINE
 

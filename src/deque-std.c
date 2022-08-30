@@ -38,3 +38,10 @@
 #define CTL_TYPE uint8_t
 #define CTL_TYPE_NAME uint8
 #include "deque.h"
+
+
+#define CTL_TYPE float
+#include "deque.h"
+
+#define CTL_TYPE double
+#include "deque.h"
