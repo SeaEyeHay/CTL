@@ -15,9 +15,9 @@ set (inc_files
 
     "iter.h"
 
-    "stack.h"
-    "deque.h"  "deque-std.h"                    # Deque
-    "link.h"   "link-std.h"                     # linked-list
+    "stack.h"  "stack-std.h"                    # Stacks
+    "deque.h"  "deque-std.h"                    # Deques
+    "link.h"   "link-std.h"                     # linked-lists
 )
 
 
@@ -25,7 +25,7 @@ set (inc_files
 set (src_files "stack.c" "deque.c" "iter.c" "link.c")
 
 # Listings of implementation files
-set (impl_files "deque-std.c" "link-std.c")
+set (impl_files "deque-std.c" "link-std.c" "stack-std.c")
 
 
 # Listings of unit test

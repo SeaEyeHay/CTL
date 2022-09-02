@@ -2,6 +2,7 @@
 #define CTL_LINK_H
 
 #include <stddef.h>
+#include <assert.h>
 
 
 extern void make_list (size_t item, size_t* len, void* dummy, void* this, void** next, void** prev);
@@ -50,6 +51,8 @@ struct CTL_STRUCT {
 
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(ln, get, CTL_TYPE_NAME) (struct CTL_STRUCT* ln, size_t i) fn (
+    assert (i < ln->len);
+
     struct CTL_NODE* node = &ln->links;
     find_node ((void**) &node, ln->len, offsetof(struct CTL_NODE, next), offsetof(struct CTL_NODE, prev), i);
 
@@ -57,6 +60,8 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(ln, get, CTL_TYPE_NAME) (struct CTL_STRUCT* l
 )
 
 CTL_INLINE struct CTL_NODE* DEF_METHODE(ln, find, CTL_TYPE_NAME) (struct CTL_STRUCT* ln, size_t i) fn (
+    assert (i < ln->len);
+
     struct CTL_NODE* node = &ln->links;
     find_node ((void**) &node, ln->len, offsetof(struct CTL_NODE, next), offsetof(struct CTL_NODE, prev), i);
 
@@ -64,6 +69,8 @@ CTL_INLINE struct CTL_NODE* DEF_METHODE(ln, find, CTL_TYPE_NAME) (struct CTL_STR
 ) 
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(ln, set, CTL_TYPE_NAME) (struct CTL_STRUCT* ln, size_t i, CTL_TYPE_ID x) fn (
+    assert (i < ln->len);
+
     struct CTL_NODE* node = &ln->links;
     find_node ((void**) &node, ln->len, offsetof(struct CTL_NODE, next), offsetof(struct CTL_NODE, prev), i);
 
@@ -97,13 +104,17 @@ CTL_INLINE struct CTL_NODE* DEF_METHODE(ln, after, CTL_TYPE_NAME) (struct CTL_NO
 )
 
 CTL_INLINE struct CTL_NODE* DEF_METHODE(ln, add, CTL_TYPE_NAME) (struct CTL_STRUCT* l, size_t i, CTL_TYPE_ID x) fn (
+    assert (i <= l->len);
+
     struct CTL_NODE* node = DEF_METHODE(ln, find, CTL_TYPE_NAME) (l, i);
     return DEF_METHODE(ln, before, CTL_TYPE_NAME) (node, x);
 )
 
-CTL_INLINE CTL_TYPE_ID DEF_METHODE(ln, rm, CTL_TYPE_NAME) (struct CTL_STRUCT* ls, size_t i) fn (
-    struct CTL_NODE* node = &ls->links;
-    find_node ((void**) &node, ls->len, offsetof(struct CTL_NODE, next), offsetof(struct CTL_NODE, prev), i);
+CTL_INLINE CTL_TYPE_ID DEF_METHODE(ln, rm, CTL_TYPE_NAME) (struct CTL_STRUCT* ln, size_t i) fn (
+    assert (i < ln->len);
+
+    struct CTL_NODE* node = &ln->links;
+    find_node ((void**) &node, ln->len, offsetof(struct CTL_NODE, next), offsetof(struct CTL_NODE, prev), i);
 
     CTL_TYPE_ID old = node->this;
     del_node (node, offsetof(struct CTL_NODE, next), offsetof(struct CTL_NODE, prev));
