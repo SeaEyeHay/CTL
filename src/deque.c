@@ -193,7 +193,7 @@ struct CtlGenericVec {
 };
 
 
-void make_ptr_deq (void* ret, size_t items, size_t length) {
+void make_deq (void* ret, size_t items, size_t length) {
     CBSize bufSize = calc_buf_size (items * length);
 
     struct CtlGenericVec newVec = { .len=0, .offset=0 };
@@ -238,17 +238,17 @@ void free_deq (void** restrict store, size_t* restrict len, size_t* restrict max
 }
 
 
-void deq_get_ptr (void* restrict ret, void* restrict deq, size_t item, size_t lenght, size_t offset, size_t i) {
+void deq_get (void* restrict ret, void* restrict deq, size_t item, size_t lenght, size_t offset, size_t i) {
     i *= item;
     copy_cbuf (ret, deq, lenght, offset + i, item);
 }
 
-void deq_set_ptr (void* restrict val, void* restrict deq, size_t item, size_t length, size_t offset, size_t i) {
+void deq_set (void* restrict val, void* restrict deq, size_t item, size_t length, size_t offset, size_t i) {
     i *= item;
     copy_to_cbuf (deq, length, offset + i, val, item);
 }
 
-void deq_add_ptr (
+void deq_add (
     void* restrict deq, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
     size_t i
 ) {
@@ -264,7 +264,7 @@ void deq_add_ptr (
     *length += item;
 }
 
-void deq_rem_ptr (
+void deq_rem (
     void* restrict deq, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
     size_t i
 ) {
@@ -281,7 +281,7 @@ void deq_rem_ptr (
 }
 
 
-void deq_push_ptr (
+void deq_push (
     void* restrict deq, void* restrict val, size_t item, size_t* restrict length, 
     size_t max, size_t offset
 ) {
@@ -289,7 +289,7 @@ void deq_push_ptr (
     *length += item;
 }
 
-void deq_push_front_ptr (
+void deq_push_front (
     void* restrict deq, void* restrict val, size_t item, size_t* restrict length, size_t max, 
     size_t* restrict offset
 ) {
@@ -300,7 +300,7 @@ void deq_push_front_ptr (
 }
 
 
-void deq_pop_ptr (
+void deq_pop (
     void* restrict ret, void* restrict deq, size_t item, size_t* restrict length, size_t max, 
     size_t offset
 ) {
@@ -308,7 +308,7 @@ void deq_pop_ptr (
     copy_cbuf (ret, deq, max, offset + *length, item);
 }
 
-void deq_pop_front_ptr (
+void deq_pop_front (
     void* restrict ret, void* restrict deq, size_t item, size_t* restrict length, size_t max, 
     size_t* restrict offset
 ) {
