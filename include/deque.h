@@ -38,6 +38,10 @@ extern void deq_pop_front (void* restrict ret, void* restrict deq, size_t item,
                                size_t* restrict length, size_t max, size_t* offset);
 
 
+struct MetaDeque {
+    size_t mask, len, off;
+};
+
 #endif // CTL_VECTOR_H
 
 
@@ -55,8 +59,8 @@ extern void deq_pop_front (void* restrict ret, void* restrict deq, size_t item,
 #ifndef CTL_IMPLEMENTATION
 
 struct CTL_STRUCT {
-    size_t CTL_STRUCT_LENGHT, CTL_STRUCT_OFFSET, CTL_STRUCT_MAX_CAPACITY;
-    CTL_TYPE_ID* CTL_STRUCT_STORAGE;
+    CTL_TYPE_ID* store;
+    struct MetaDeque _impl;
 };
 
 #endif
