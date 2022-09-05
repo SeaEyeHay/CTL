@@ -3,14 +3,21 @@
 
 #include <stddef.h>
 
+#include "macros.h"
 
-extern void make_deq (void* ret, size_t items, size_t length);
+
+struct MetaDeque {
+    size_t mask, len, off;
+};
+
+
+extern void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini);
 
 extern void grow_deq (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off);
 
 extern void shrink_deq (void** restrict store, size_t* restrict max, size_t* restrict off);
 
-extern void free_deq (void** restrict store, size_t* restrict len, size_t* restrict max, size_t* restrict off);
+extern void free_deq (void** restrict store, struct MetaDeque* impl);
 
 
 extern void deq_get (void* restrict ret, void* restrict deq, size_t item, size_t max, size_t offset, size_t i);
@@ -38,10 +45,6 @@ extern void deq_pop_front (void* restrict ret, void* restrict deq, size_t item,
                                size_t* restrict length, size_t max, size_t* offset);
 
 
-struct MetaDeque {
-    size_t mask, len, off;
-};
-
 #endif // CTL_VECTOR_H
 
 
@@ -66,15 +69,15 @@ struct CTL_STRUCT {
 #endif
 
 
-CTL_INLINE struct CTL_STRUCT DEF_CONSTRUCTOR(CTL_TYPE_NAME, deq) (size_t iniSize) fn ( 
-    struct CTL_STRUCT newVec;
-    make_deq (&newVec, sizeof(CTL_TYPE_ID), iniSize);
+CTL_INLINE struct CTL_STRUCT DEF_CONSTRUCTOR(CTL_TYPE_NAME, deq) (size_t ini) fn ( 
+    struct CTL_STRUCT newDeq;
+    make_deq (&newDeq, fid(store), fid(_impl), sizeof(CTL_TYPE_ID), ini);
 
-    return newVec;
+    return newDeq;
 )
 
 CTL_INLINE void DEF_DESTRUCTOR(CTL_TYPE_NAME, deq) (struct CTL_STRUCT* deq) fn (
-    free_deq ((void**)&deq->store, &deq->len, &deq->max, &deq->off);
+    free_deq ((void**) &deq->store, &deq->_impl);
 )
 
 

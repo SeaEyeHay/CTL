@@ -49,6 +49,7 @@
 #endif //
 
 
+#define fid(F) offsetof (struct CTL_STRUCT, F)
 
 
 #if defined (CTL_IMPLEMENTATION) // CTL_INLINE

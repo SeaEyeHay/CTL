@@ -1,6 +1,8 @@
 #define CTL_NO_TEMPLATE
 #include "deque.h"
 
+#include "macros.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -187,22 +189,15 @@ static void* realloc_cbuf (void** buf, size_t off, CBSize oldSize, CBSize newSiz
 //
 
 
-struct CtlGenericVec {
-    size_t len, offset, max;
-    void* store;
-};
+void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini) {
+    CBSize bufSize = calc_buf_size (items * ini);
 
-
-void make_deq (void* ret, size_t items, size_t length) {
-    CBSize bufSize = calc_buf_size (items * length);
-
-    struct CtlGenericVec newVec = { .len=0, .offset=0 };
-    newVec.max = bufSize;
-
-    newVec.store = (bufSize > 0) ? alloc_cbuf (bufSize) : NULL;
-
-
-    *((struct CtlGenericVec*)ret) = newVec;
+    field (ret, store, void*) = (bufSize > 0) ? malloc (bufSize) : NULL;
+    field (ret, impl, struct MetaDeque) = (struct MetaDeque) {
+        .mask = len_mask (bufSize),
+        .len = 0,
+        .off = 0
+    };
 }
 
 void grow_deq (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off) {
@@ -228,13 +223,11 @@ void shrink_deq (void** restrict store, size_t* restrict max, size_t* restrict o
     *off = 0;
 }
 
-void free_deq (void** restrict store, size_t* restrict len, size_t* restrict max, size_t* restrict off) {
+void free_deq (void** restrict store, struct MetaDeque* impl) {
     free (*store);
     *store = NULL;
 
-    *len = 0;
-    *max = 0;
-    *off = 0;
+    *impl = (struct MetaDeque) { 0 };
 }
 
 

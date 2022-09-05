@@ -1,14 +1,13 @@
 #ifndef CTL_MACROS_H
 #define CTL_MACROS_H
 
+#include <stddef.h>
 
-#define CTL_STRUCT_LENGHT       len
-#define CTL_STRUCT_MAX_CAPACITY max
-#define CTL_STRUCT_OFFSET       off
-#define CTL_STRUCT_STORAGE      store
 
-#define len(S) ((S).CTL_STRUCT_LENGHT / (sizeof *((S).CTL_STRUCT_STORAGE)))
-
+/**
+ * Dynamique structure helpers
+ */
+typedef size_t FieldId;
 #define field(P, O, T) *((T*)(((void*)P) + O))
 
 
