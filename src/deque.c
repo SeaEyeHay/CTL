@@ -13,10 +13,15 @@
 //      ======================================= CIRCULAR BUFFER ======================================= 
 //
 
-typedef size_t CBSize;
+typedef struct CBOff CBOff;
+typedef struct CBLen CBLen;
 
 struct CBOff {
     size_t dest, src;
+};
+
+struct CBLen {
+    size_t len, mask;
 };
 
 
@@ -41,7 +46,7 @@ static inline size_t len_mask (size_t length) {
  * Bit Twiddling Hacks
  * Credit to : https://stackoverflow.com/a/466242
  */
-static CBSize calc_buf_size (size_t required) {
+static CBLen calc_buf_size (size_t required) {
     required--;
 
     required |= required >> 1;
@@ -54,69 +59,41 @@ static CBSize calc_buf_size (size_t required) {
     required++;
 
 
-    return required;
+    return (CBLen) { .len=required, .mask=len_mask (required) };
 }
 
 
+static CBOff move_b_cbuf (void* d, CBLen dMax, size_t dOff, void* s, CBLen sMax, size_t sOff, size_t size) {
+    // Cycle the offset around the circular buffer
+    dOff &= dMax.mask;
+    sOff &= sMax.mask;
 
-static void* find_in_cbuf (void* buf, CBSize len, size_t off, size_t index) {
-    assert ( is_pow_2 (len) && "Invalid buffer length!! - Use the calc_buf_size function." );
+    size_t                                      //
+        dEnd = (dOff + size) & dMax.mask,       // Find the end of the chunks
+        sEnd = (sOff + size) & sMax.mask;       //
 
-    const size_t mask = len_mask (len);
-    const size_t i = (off + index) & mask;
+    // Cache the ends
+    const CBOff out = { .dest=dEnd, .src=sEnd };
 
-    return buf + i;
+    if (sEnd < size) {
+        dEnd -= sEnd;                   //
+        size -= sEnd;                   // Move the right most chunk
+        memmove (d + dEnd, s, sEnd);    //
+
+        if (dEnd < size) {                      //
+            size -= dEnd;                       // Move the middle chunk
+            memmove (d, s + dOff + size, dEnd); //
+        }
+    }
+
+    // Move the the whole chunk or the first part
+    memmove (d + dOff, s + sOff, size); 
+
+
+    return out;
 }
 
-
-static struct CBOff move_b_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBSize sLen, size_t sOff, size_t size) {
-    assert ( is_pow_2 (dLen) && "Invalid destination buffer length!! - Use the calc_buf_size function." );
-    assert ( is_pow_2 (sLen) && "Invalid source buffer length!! - Use the calc_buf_size function." );
-
-
-    // Cycle the offset around the circle
-    const size_t dMask = len_mask (dLen), sMask = len_mask (sLen);
-
-    dOff = dOff & dMask;
-    sOff = sOff & sMask;
-
-
-    // Decide which buffer is shorter and which is longer
-    size_t longer = dLen - dOff, shorter = sLen - sOff;
-
-    if ( longer < shorter ) {
-        size_t temp = longer;
-        longer = shorter;
-        shorter = temp;
-    }
-
-
-    if ( size > shorter ) {
-        memmove (d + dOff, s + sOff, shorter);
-        dOff = (dOff + shorter) & dMask;
-        sOff = (sOff + shorter) & sMask;
-
-        longer -= shorter;
-        size -= shorter;
-    }
-
-    if ( size > longer ) {
-        memmove (d + dOff, s + sOff, longer);
-        dOff = (dOff + longer) & dMask;
-        sOff = (sOff + longer) & sMask;
-
-        size -= longer;
-    }
-
-    memmove (d + dOff, s + sOff, size);
-    dOff = (dOff + size) & dMask;
-    sOff = (sOff + size) & sMask;
-
-
-    return (struct CBOff) { .dest=dOff, .src=sOff };
-}
-
-static struct CBOff move_f_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBSize sLen, size_t sOff, size_t size) {
+static struct CBOff move_f_cbuf (void* d, CBLen dLen, size_t dOff, void* s, CBLen sLen, size_t sOff, size_t size) {
     assert ( is_pow_2 (dLen) && "Invalid destination buffer length!! - Use the calc_buf_size function." );
     assert ( is_pow_2 (sLen) && "Invalid source buffer length!! - Use the calc_buf_size function." );
     
@@ -129,7 +106,7 @@ static struct CBOff move_f_cbuf (void* d, CBSize dLen, size_t dOff, void* s, CBS
     return (struct CBOff) { .dest=dOff, .src=sOff };
 }
 
-static struct CBOff copy_cbuf (void* restrict dest, void* restrict src, CBSize len, size_t off, size_t size) {
+static struct CBOff copy_cbuf (void* restrict dest, void* restrict src, CBLen len, size_t off, size_t size) {
     assert ( is_pow_2 (len) && "Invalid source buffer length!! - Use the calc_buf_size function." );
     
     const size_t mask = len_mask (len);
@@ -145,7 +122,7 @@ static struct CBOff copy_cbuf (void* restrict dest, void* restrict src, CBSize l
     return (struct CBOff) { .dest=size, .src=(off + size) & mask };
 }
 
-static struct CBOff copy_to_cbuf (void* restrict dest, CBSize len, size_t off, void* restrict src, size_t size) {
+static struct CBOff copy_to_cbuf (void* restrict dest, CBLen len, size_t off, void* restrict src, size_t size) {
     assert ( is_pow_2 (len) && "Invalid destination buffer length!! - Use the calc_buf_size function." );
 
     const size_t mask = len_mask (len);
@@ -162,12 +139,12 @@ static struct CBOff copy_to_cbuf (void* restrict dest, CBSize len, size_t off, v
 }
 
 
-static void* alloc_cbuf (CBSize size) {
+static void* alloc_cbuf (CBLen size) {
     assert ( is_pow_2 (size) && "Invalid buffer size!! - Use the calc_buf_size function." );
     return malloc (size);
 }
 
-static void* realloc_cbuf (void** buf, size_t off, CBSize oldSize, CBSize newSize) {
+static void* realloc_cbuf (void** buf, size_t off, CBLen oldSize, CBLen newSize) {
     assert ( is_pow_2 (oldSize) && "Invalid old buffer size!! - Use the calc_buf_size function." );
     assert ( is_pow_2 (newSize) && "Invalid new buffer size!! - Use the calc_buf_size function." );
 
@@ -190,11 +167,12 @@ static void* realloc_cbuf (void** buf, size_t off, CBSize oldSize, CBSize newSiz
 
 
 void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini) {
-    CBSize bufSize = calc_buf_size (items * ini);
+    CBLen bufSize = calc_buf_size (items * ini);
 
     field (ret, store, void*) = (bufSize > 0) ? malloc (bufSize) : NULL;
-    field (ret, impl, struct MetaDeque) = (struct MetaDeque) {
+    field (ret, impl, struct MetaDeq) = (struct MetaDeq) {
         .mask = len_mask (bufSize),
+        .max = bufSize,
         .len = 0,
         .off = 0
     };
@@ -202,7 +180,7 @@ void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini)
 
 void grow_deq (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off) {
     
-    CBSize newMax;
+    CBLen newMax;
     if (*max == 0) {
         newMax = calc_buf_size (2 * item);
     } else {
@@ -216,18 +194,18 @@ void grow_deq (void** restrict store, size_t item, size_t* restrict max, size_t*
 }
 
 void shrink_deq (void** restrict store, size_t* restrict max, size_t* restrict off) {
-    CBSize newMax = *max >> 1;
+    CBLen newMax = *max >> 1;
     realloc_cbuf (store, *off, *max, newMax);
 
     *max = newMax;
     *off = 0;
 }
 
-void free_deq (void** restrict store, struct MetaDeque* impl) {
+void free_deq (void** restrict store, struct MetaDeq* impl) {
     free (*store);
     *store = NULL;
 
-    *impl = (struct MetaDeque) { 0 };
+    *impl = (struct MetaDeq) { 0 };
 }
 
 
