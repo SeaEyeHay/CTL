@@ -24,9 +24,9 @@ struct MetaDeq {
 
 extern void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini);
 
-extern void grow_deq (void** restrict store, size_t item, size_t* restrict max, size_t* restrict off);
+extern void grow_deq (void** restrict store, size_t item, struct MetaDeq* meta);
 
-extern void shrink_deq (void** restrict store, size_t* restrict max, size_t* restrict off);
+extern void shrink_deq (void** restrict store, struct MetaDeq* restrict meta);
 
 extern void free_deq (void** restrict store, struct MetaDeq* impl);
 
