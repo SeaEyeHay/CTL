@@ -2,6 +2,7 @@
 #define CTL_VECTOR_H
 
 #include <stddef.h>
+#include <assert.h>
 
 #include "macros.h"
 
@@ -23,10 +24,6 @@ struct MetaDeq {
  */
 
 extern void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini);
-
-extern void grow_deq (void** restrict store, size_t item, struct MetaDeq* meta);
-
-extern void shrink_deq (void** restrict store, struct MetaDeq* restrict meta);
 
 extern void free_deq (void** restrict store, struct MetaDeq* impl);
 
@@ -50,7 +47,7 @@ extern void deq_rem (void** restrict deq, size_t item, struct MetaDeq* restrict 
 
 #ifndef CTL_NO_TEMPLATE
 
-#define CTL_STRUCT_SFX d
+#define CTL_STRUCT_SFX q
 #include "template.h"
 
 
@@ -77,6 +74,8 @@ CTL_INLINE void DEF_DESTRUCTOR(CTL_TYPE_NAME, deq) (struct CTL_STRUCT* deq) fn (
 
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(deq, get, CTL_TYPE_NAME) (struct CTL_STRUCT* deq, size_t i) fn (
+    assert ( i < deq_len(deq) );
+
     CTL_TYPE_ID ret;
     deq_get (&ret, deq->store, sizeof(CTL_TYPE_ID), &deq->meta, i);
 
@@ -84,6 +83,8 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(deq, get, CTL_TYPE_NAME) (struct CTL_STRUCT* 
 )
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(deq, set, CTL_TYPE_NAME) (struct CTL_STRUCT* deq, size_t i, CTL_TYPE_ID x) fn ( 
+    assert ( i < deq_len(deq) );
+
     CTL_TYPE_ID ret = DEF_METHODE(deq, get, CTL_TYPE_NAME) (deq, i);
     deq_set (&x, deq->store, sizeof x, &deq->meta, i);
 
@@ -91,11 +92,15 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(deq, set, CTL_TYPE_NAME) (struct CTL_STRUCT* 
 )
 
 CTL_INLINE void DEF_METHODE(deq, add, CTL_TYPE_NAME) (struct CTL_STRUCT* deq, size_t i, CTL_TYPE_ID x) fn (
+    assert ( i <= deq_len(deq) );
+
     deq_add ((void**) &deq->store, sizeof x, &deq->meta, i);
     deq_set (&x, deq->store, sizeof x, &deq->meta, i);
 )
 
 CTL_INLINE CTL_TYPE_ID DEF_METHODE(deq, rem, CTL_TYPE_NAME) (struct CTL_STRUCT* deq, size_t i) fn (
+    assert ( i < deq_len(deq) );
+
     CTL_TYPE_ID ret = DEF_METHODE(deq, get, CTL_TYPE_NAME) (deq, i);
     deq_rem ((void**) &deq->store, sizeof(CTL_TYPE_ID), &deq->meta, i);
 

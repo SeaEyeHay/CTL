@@ -106,7 +106,7 @@ if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR "${PROJECT_NAME}_build_testing"
     endforeach ()
 
     # Include benchmarks
-    add_subdirectory ("benchmarks")
+    # add_subdirectory ("benchmarks")
 
 endif ()
 

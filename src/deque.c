@@ -207,7 +207,7 @@ void make_deq (void* ret, FieldId store, FieldId impl, size_t items, size_t ini)
     };
 }
 
-void grow_deq (void** restrict store, size_t item, struct MetaDeq* restrict meta) {
+static void grow_deq (void** restrict store, size_t item, struct MetaDeq* restrict meta) {
     // Calculate the size of the grown buffer
     CBLen newMax;
     if (meta->max == 0) {
@@ -225,7 +225,7 @@ void grow_deq (void** restrict store, size_t item, struct MetaDeq* restrict meta
     meta->mask = newMax.mask;
 }
 
-void shrink_deq (void** restrict store, struct MetaDeq* restrict meta) {
+static void shrink_deq (void** restrict store, struct MetaDeq* restrict meta) {
     // Calculate the size of the shrunk buffer
     CBLen newMax = { .len=meta->max >> 1, .mask=len_mask (newMax.len) };
 
