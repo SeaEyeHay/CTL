@@ -30,7 +30,7 @@ set (impl_files "deque-std.c" "link-std.c" "stack-std.c")
 
 # Listings of unit test
 set (test_dir "${CMAKE_SOURCE_DIR}/tests")
-set (test_files "test-vec.c")
+set (test_files )
 
 ################# END VARIABLES ##################
 

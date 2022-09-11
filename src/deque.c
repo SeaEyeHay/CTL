@@ -27,6 +27,9 @@ struct CBLen {
     Mask mask;
 };
 
+// glues
+#define cbmax(M) (CBLen) { .len=(M)->max, .mask=(M)->mask }
+
 
 #ifndef NDEBUG
 
@@ -242,86 +245,67 @@ void free_deq (void** restrict store, struct MetaDeq* impl) {
 }
 
 
-void deq_get (void* restrict ret, void* restrict deq, size_t item, size_t lenght, size_t offset, size_t i) {
+void deq_get (void* restrict ret, void* restrict deq, size_t item, struct MetaDeq* restrict meta, size_t i) {
     i *= item;
-    copy_cbuf (ret, deq, lenght, offset + i, item);
+    copy_cbuf (ret, deq, cbmax(meta), meta->off + i, item);
 }
 
-void deq_set (void* restrict val, void* restrict deq, size_t item, size_t length, size_t offset, size_t i) {
+void deq_set (void* restrict val, void* restrict deq, size_t item, struct MetaDeq* restrict meta, size_t i) {
     i *= item;
-    copy_to_cbuf (deq, length, offset + i, val, item);
+    copy_to_cbuf (deq, cbmax(meta), meta->off, val, item);
 }
 
-void deq_add (
-    void* restrict deq, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
-    size_t i
-) {
+void deq_add (void** restrict deq, size_t item, struct MetaDeq* restrict meta, size_t i) {
+    size_t byteLen = meta->len * item;
     i *= item;
 
-    if ( i < *length/2 ) {
-        *offset = move_f_cbuf (deq, max, *offset + i, deq, max, *offset + i + item, i + item).dest;
+    meta->len++;
+
+    // Grow the deque if not enough remain
+    if ( byteLen + item >= meta->max ) grow_deq (deq, item, meta);
+
+    // Always move, at most, half of the deque
+    if ( i < byteLen/2 ) {
+        const size_t                    //
+            src = meta->off + i,        // Offsets for moving the front chunk ahead of the new item
+            dest = src - item;          //
+
+        // Create a freespace for the new item
+        meta->off = move_f_cbuf (*deq, cbmax(meta), dest, *deq, cbmax(meta), src, i).dest;
     } else {
-        const size_t toMove = *length - i;
-        move_b_cbuf (deq, max, *offset + i + item, deq, max, *offset + i, toMove);
+        const size_t 
+            toMove = byteLen - i,       //
+            src = meta->off + i,        // Datas for moving the tail chunk to the back of the new item 
+            dest = src + item;          //
+        
+        // Create a freespace for the new item
+        move_b_cbuf (*deq, meta->mask, dest, *deq, meta->mask, src, toMove);
     }
-
-    *length += item;
 }
 
-void deq_rem (
-    void* restrict deq, size_t item, size_t* restrict length, size_t max, size_t* restrict offset, 
-    size_t i
-) {
+void deq_rem (void** restrict deq, size_t item, struct MetaDeq* restrict meta, size_t i) {
+    size_t byteLen = meta->len * item;
     i *= item;
 
-    if ( i < *length/2 ) {
-        *offset = move_f_cbuf (deq, max, *offset + i + item, deq, max, *offset + i, i).dest;
+    meta->len--;
+
+    // Shrink the deque if too much empty space
+    if ( byteLen <= meta->max/3 ) shrink_deq (deq, meta);
+
+    if ( i < byteLen/2 ) {
+        // overwrite the element to delete
+        move_b_cbuf (*deq, meta->mask, meta->off + item, *deq, meta->mask, meta->off, i);
+        meta->off += item;
     } else {
-        const size_t toMove = *length - (i + item);
-        move_b_cbuf (deq, max, *offset + i, deq, max, *offset + i + item, toMove);
+        const size_t 
+            toMove = meta->len - (i + item),    // Length of data after the element to delete
+            src = meta->off + byteLen,          // Offset to the end of the deque
+            dest = src - item;
+
+        // overwrite the element to delete
+        move_f_cbuf (*deq, cbmax(meta), dest, *deq, cbmax(meta), src, toMove);
     }
-
-    *length -= item;
 }
-
-
-void deq_push (
-    void* restrict deq, void* restrict val, size_t item, size_t* restrict length, 
-    size_t max, size_t offset
-) {
-    move_b_cbuf (deq, max, offset + *length, val, item, 0, item);
-    *length += item;
-}
-
-void deq_push_front (
-    void* restrict deq, void* restrict val, size_t item, size_t* restrict length, size_t max, 
-    size_t* restrict offset
-) {
-    move_f_cbuf (deq, max, *offset, val, item, 0, item);
-
-    *offset = *offset - item & len_mask (max);
-    *length += item;
-}
-
-
-void deq_pop (
-    void* restrict ret, void* restrict deq, size_t item, size_t* restrict length, size_t max, 
-    size_t offset
-) {
-    *length -= item;
-    copy_cbuf (ret, deq, max, offset + *length, item);
-}
-
-void deq_pop_front (
-    void* restrict ret, void* restrict deq, size_t item, size_t* restrict length, size_t max, 
-    size_t* restrict offset
-) {
-    copy_cbuf (ret, deq, max, *offset, item);
-
-    *offset = *offset + item & len_mask (max);
-    *length -= item;
-}
-
 
 //
 //      ======================================= ITERATOR ============================================
