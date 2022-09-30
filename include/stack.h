@@ -4,8 +4,10 @@
 #include <stddef.h>
 #include <assert.h>
 
+#include "generics.h"
 
-extern void make_stack (void* restrict nstack, size_t store, size_t len, size_t max, size_t size);
+
+extern void make_stack (void* restrict nstack, size_t ini, size_t items, const struct StackGen* restrict gen);
 //extern void make_stack_rooted ();
 
 extern void grow_stack (void** restrict store, size_t* restrict max, size_t item);
@@ -14,10 +16,14 @@ extern void grow_stack (void** restrict store, size_t* restrict max, size_t item
 extern void shrink_stack (void** restrict store, size_t* restrict max, size_t item);
 //extern void shrink_stack_rooted (void* restrict store, size_t* restrict max);
 
+extern void slice_stack (void* restrict ret, void* restrict stk, const struct StackGen* restrict gen, 
+                         size_t items, size_t a, size_t z);
 
-extern void stack_add (void* restrict store, void* restrict val, size_t* restrict len, size_t item, size_t i);
+extern void stack_add_n (void* restrict stack, void* restrict val, const struct StackGen* restrict gen, 
+                         size_t item, size_t i, size_t n);
 
-extern void stack_rem (void* restrict ret, void* restrict store, size_t* restrict len, size_t item, size_t i);
+extern void stack_rm_n (void* restrict ret, void* restrict stack, const struct StackGen* restrict gen, 
+                        size_t items, size_t i, size_t n);
 
 
 #endif // CTL_STACK_H
@@ -41,28 +47,29 @@ struct CTL_STRUCT {
     CTL_TYPE_ID* store;
 };
 
+static const struct StackGen CTL_GENERIC = {
+    .store=offsetof (struct CTL_STRUCT, store),
+    .len=offsetof (struct CTL_STRUCT, len),
+    .max=offsetof (struct CTL_STRUCT, max)
+};
+
 #endif // CTL_IMPLEMENTATION
 
 
-CTL_INLINE struct CTL_STRUCT DEF_CONSTRUCTOR(CTL_TYPE_NAME, stack) (size_t initSize) fn (
-    static const size_t
-        storeOff = offsetof(struct CTL_STRUCT, store),
-        lenOff   = offsetof(struct CTL_STRUCT, len),
-        maxOff   = offsetof(struct CTL_STRUCT, max);
-
+CTL_INLINE struct CTL_STRUCT DEF_CONSTRUCTOR(CTL_TYPE_NAME, stk) (size_t ini) fn (
     struct CTL_STRUCT newStack;
-    shrink(make_stack, rooted) (&newStack, storeOff, lenOff, maxOff, sizeof(CTL_TYPE_ID));
+    make_stack (&newStack, ini, sizeof(CTL_TYPE_ID), &CTL_GENERIC);
 
     return newStack;
 )
 
 
-CTL_INLINE CTL_TYPE_ID DEF_METHODE(stack, get, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i) fn (
+CTL_INLINE CTL_TYPE_ID DEF_METHODE(stk, get, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i) fn (
     assert (i < stk->len);
     return stk->store[i];
 )
 
-CTL_INLINE CTL_TYPE_ID DEF_METHODE(stack, set, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i, CTL_TYPE_ID x) fn (
+CTL_INLINE CTL_TYPE_ID DEF_METHODE(stk, set, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i, CTL_TYPE_ID x) fn (
     assert (i < stk->len);
 
     CTL_TYPE_ID removed = stk->store[i];
@@ -72,22 +79,47 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(stack, set, CTL_TYPE_NAME) (struct CTL_STRUCT
 )
 
 
-CTL_INLINE void DEF_METHODE(stack, add, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i, CTL_TYPE_ID x) fn (
-    assert (i <= stk->len);
+CTL_INLINE const struct CTL_STRUCT DEF_METHODE(stk, slice, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t start, size_t end) fn (
+    assert (start < end);
+    assert (end < stk->len);
 
-    if (stk->max == stk->len) grow_stack ((void**) &stk->store, &stk->max, sizeof x);
-    stack_add (stk->store, &x, &stk->len, sizeof x, i);
+    struct CTL_STRUCT newSlice;
+    slice_stack (&newSlice, stk, &CTL_GENERIC, sizeof(CTL_TYPE_ID), start, end);
+
+    return newSlice;
 )
 
-CTL_INLINE CTL_TYPE_ID DEF_METHODE(stack, rm, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i) fn (
+
+CTL_INLINE void DEF_METHODE(stk, add, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i, CTL_TYPE_ID x) fn (
+    assert (i <= stk->len);
+    stack_add_n (stk, &x, &CTL_GENERIC, sizeof x, i, 1);
+)
+
+CTL_INLINE void DEF_METHODE(stk, nadd, CTL_TYPE_NAME) (struct CTL_STRUCT* restrict stk, size_t i, size_t n, CTL_TYPE_ID x[]) fn (
+    assert (i <= stk->len);
+    stack_add_n (stk, x, &CTL_GENERIC, sizeof(CTL_TYPE_ID), i, n);
+)
+
+CTL_INLINE void DEF_METHODE(stk, cat, CTL_TYPE_NAME) (struct CTL_STRUCT* restrict stk, size_t i, struct CTL_STRUCT* restrict xs) fn (
+    assert (i <= stk->len);
+    stack_add_n (stk, xs->store, &CTL_GENERIC, sizeof(CTL_TYPE_ID), i, xs->len);
+)
+
+
+CTL_INLINE CTL_TYPE_ID DEF_METHODE(stk, rm, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i) fn (
     assert (i < stk->len);
 
-    if (stk->max >= 3 * stk->len) shrink_stack ((void**) &stk->store, &stk->max, sizeof(CTL_TYPE_ID));
-
     CTL_TYPE_ID removed;
-    stack_rem (&removed, stk->store, &stk->len, sizeof(CTL_TYPE_ID), i);
+    stack_rm_n (&removed, stk, &CTL_GENERIC, sizeof removed, i, 1);
 
     return removed;
+)
+
+CTL_INLINE void DEF_METHODE(stk, nrm, CTL_TYPE_NAME) (CTL_TYPE_ID* restrict dest, struct CTL_STRUCT* restrict src, size_t i, size_t n) fn (
+    assert ( i < src->len );
+    assert ( (i + n) < src->len );
+
+    stack_rm_n (dest, src, &CTL_GENERIC, sizeof *dest, i, n);
 )
 
 

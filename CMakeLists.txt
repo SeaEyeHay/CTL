@@ -11,7 +11,7 @@ set (inc_dir "${CMAKE_SOURCE_DIR}/include")
 
 # Listing of headers
 set (inc_files 
-    "macros.h" "template.h" "undef-list.h"      # Pre-proc stuffs
+    "generics.h" "macros.h" "template.h" "undef-list.h"      # Pre-proc stuffs
 
     "iter.h"
 
