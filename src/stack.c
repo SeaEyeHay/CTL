@@ -36,6 +36,43 @@ void slice_stack (void* restrict ret, void* restrict stk, const struct StackGen*
     field (ret, gen->max, size_t) = nlen;
 }
 
+void mov_stack (
+        void* restrict dest, size_t destIndex,
+        void* restrict src,  size_t srcIndex,
+        const struct StackGen* restrict gen, size_t items, size_t n
+) {
+    void** restrict destStore = &field (dest, gen->store, void*);
+    void** restrict srcStore  = &field (src, gen->store, void*);
+
+    size_t* restrict destLen = &field (dest, gen->len, size_t);
+    size_t* restrict srcLen  = &field (src, gen->len, size_t);
+
+    size_t* restrict destMax = &field (dest, gen->max, size_t);
+    size_t* restrict srcMax  = &field (src, gen->max, size_t);
+
+
+    const size_t 
+        toCopy          = n * items,
+        destByteLen     = *destLen * items,
+        destByteIndex   = destIndex * items,
+        srcByteLen      = *srcLen * items,
+        srcByteIndex    = srcIndex * items;
+
+    void* destAt = *destStore + destByteIndex;
+    void* srcAt  = *srcStore + srcByteIndex;
+
+    if ( destByteLen + toCopy <= *destMax) grow_stack (destStore, destMax, items); 
+
+    memmove (destAt + toCopy, destAt, destByteLen - destByteIndex);
+    memcpy (destAt, srcAt, toCopy);
+    memmove (srcAt, srcAt + toCopy, srcByteLen - toCopy - srcByteIndex);
+
+    if ( *srcMax >= 3*(srcByteLen - toCopy) ) shrink_stack (srcStore, srcMax, items);
+
+    (*destLen) += n;
+    (*srcLen) -= n;
+}
+
 
 void stack_add_n (void* restrict stk, void* restrict val, const struct StackGen* restrict gen, size_t item, size_t i, size_t n) {
     size_t* restrict len = &field (stk, gen->len, size_t);
@@ -48,12 +85,12 @@ void stack_add_n (void* restrict stk, void* restrict val, const struct StackGen*
         byteLen = *len * item,
         byteIndex = i * item;
 
-    store += byteIndex;
+    void* at = *store + byteIndex;
 
     if ( byteLen + toCopy <= *max ) grow_stack (store, max, item); 
 
-    memmove (*store + toCopy, store, byteLen - byteIndex);
-    memcpy (store, val, toCopy);
+    memmove (at + toCopy, at, byteLen - byteIndex);
+    memcpy (at, val, toCopy);
 
     (*len) += n;
 }
@@ -70,13 +107,13 @@ void stack_rm_n (void* restrict ret, void* restrict stk, const struct StackGen* 
         byteIndex = i * items,
         byteNext = byteIndex + toCopy;
 
-    if ( *max >= 3*(byteLen - toCopy) ) shrink_stack (store, max, items);
-
 
     void* ptrAt = store + byteIndex;
 
-    memcpy (ret, ptrAt, items);
+    if (ret != NULL) memcpy (ret, ptrAt, items);
     memmove (ptrAt, store + byteNext, byteLen - byteNext);
+
+    if ( *max >= 3*(byteLen - toCopy) ) shrink_stack (store, max, items);
 
     (*len) -= n;
 }

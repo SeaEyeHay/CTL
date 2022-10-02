@@ -19,6 +19,10 @@ extern void shrink_stack (void** restrict store, size_t* restrict max, size_t it
 extern void slice_stack (void* restrict ret, void* restrict stk, const struct StackGen* restrict gen, 
                          size_t items, size_t a, size_t z);
 
+extern void mov_stack (void* restrict dest, size_t destIndex,
+                       void* restrict src,  size_t srcIndex,
+                       const struct StackGen* restrict gen, size_t items, size_t n);
+
 extern void stack_add_n (void* restrict stack, void* restrict val, const struct StackGen* restrict gen, 
                          size_t item, size_t i, size_t n);
 
@@ -89,6 +93,33 @@ CTL_INLINE const struct CTL_STRUCT DEF_METHODE(stk, slice, CTL_TYPE_NAME) (struc
     return newSlice;
 )
 
+CTL_INLINE void DEF_METHODE(stk, mov, CTL_TYPE_NAME) (
+        struct CTL_STRUCT* restrict dest, size_t destIndex,
+        struct CTL_STRUCT* restrict src,  size_t srcIndex,
+        size_t n
+) fn (
+    assert (destIndex <= dest->len);
+    assert (srcIndex < src->len);
+    assert (srcIndex + n < src->len);
+
+    mov_stack (dest, destIndex, src, srcIndex, &CTL_GENERIC, sizeof(CTL_TYPE_ID), n);
+)
+
+CTL_INLINE void DEF_METHODE(stk, catslice, CTL_TYPE_NAME) (
+        struct CTL_STRUCT* restrict dest, size_t destIndex, 
+        struct CTL_STRUCT* restrict src,  size_t start, size_t end
+) fn (
+    assert (destIndex < dest->len);
+    assert (destIndex + start - end < dest->len);
+    assert (end < src->len);
+    assert (start < end);
+
+    struct CTL_STRUCT tempSlice;
+    slice_stack (&tempSlice, src, &CTL_GENERIC, sizeof(CTL_TYPE_ID), start, end);
+
+    stack_add_n (dest, tempSlice.store, &CTL_GENERIC, sizeof(CTL_TYPE_ID), destIndex, tempSlice.len);
+)
+
 
 CTL_INLINE void DEF_METHODE(stk, add, CTL_TYPE_NAME) (struct CTL_STRUCT* stk, size_t i, CTL_TYPE_ID x) fn (
     assert (i <= stk->len);
@@ -115,7 +146,10 @@ CTL_INLINE CTL_TYPE_ID DEF_METHODE(stk, rm, CTL_TYPE_NAME) (struct CTL_STRUCT* s
     return removed;
 )
 
-CTL_INLINE void DEF_METHODE(stk, nrm, CTL_TYPE_NAME) (CTL_TYPE_ID* restrict dest, struct CTL_STRUCT* restrict src, size_t i, size_t n) fn (
+CTL_INLINE void DEF_METHODE(stk, nrm, CTL_TYPE_NAME) (
+        CTL_TYPE_ID* restrict dest, struct CTL_STRUCT* restrict src, 
+        size_t i, size_t n
+) fn (
     assert ( i < src->len );
     assert ( (i + n) < src->len );
 
